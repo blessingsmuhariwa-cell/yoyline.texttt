@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>For My Queen 💍</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --reze-pink: #ff00cc; 
+            --indie-blue: #00d4ff;
+            --liquid-glass: rgba(255, 255, 255, 0.1); 
+        }
+        
+        body, html { 
+            margin: 0; padding: 0; background: #000; color: white; 
+            font-family: 'Montserrat', sans-serif; scroll-behavior: smooth; 
+            scroll-snap-type: y mandatory; height: 100vh;
+            overflow-x: hidden; -webkit-overflow-scrolling: touch;
+        }
+
+        /* --- SPOTIFY LYRICS BAR --- */
+        #spotify-lyrics {
+            position: fixed; top: 30px; left: 0; width: 100%;
+            height: 150px; text-align: center; z-index: 1000; 
+            display: none; padding: 0 20px; box-sizing: border-box;
+            pointer-events: none;
+            mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+        }
+        .lyric-line {
+            font-size: 0.85rem; font-weight: 600; letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.2); transition: all 0.3s ease-out;
+            margin: 6px 0; text-transform: lowercase; min-height: 1.4rem;
+        }
+        .lyric-line.active {
+            color: #fff; font-size: 1.15rem; opacity: 1;
+            text-shadow: 0 0 20px var(--reze-pink); transform: scale(1.05);
+        }
+
+        /* --- BACKGROUND --- */
+        .fixed-bg { position: fixed; inset: 0; z-index: -2; background: #000; }
+        .indie-moon {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 150vw; height: 150vh; z-index: -1;
+            background: radial-gradient(circle at 50% 50%, rgba(0, 212, 255, 0.15) 0%, rgba(20, 5, 25, 1) 70%, #000 100%);
+        }
+
+        /* --- CARDS --- */
+        #main-container { display: none; }
+        .section { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0 25px; box-sizing: border-box; scroll-snap-align: start; scroll-snap-stop: always; }
+        .glass-card { 
+            background: var(--liquid-glass); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); 
+            border: 1px solid rgba(255, 255, 255, 0.15); padding: 35px; border-radius: 30px; 
+            max-width: 500px; width: 85%; text-align: center; opacity: 0; transform: translateY(40px);
+            transition: all 1s cubic-bezier(0.19, 1, 0.22, 1);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+        }
+        .section.visible .glass-card { opacity: 1; transform: translateY(0); }
+
+        /* --- TEXT --- */
+        .highlight-name { color: var(--reze-pink); font-weight: 600; text-shadow: 0 0 10px rgba(255,0,204,0.3); }
+        .chapter-title { font-family: 'Pinyon Script', cursive; font-size: 3.5rem; color: var(--reze-pink); margin: 0; }
+        .letter-text { font-size: 1.05rem; line-height: 1.7; color: rgba(255,255,255,0.95); }
+        #timer { color: var(--indie-blue); font-weight: bold; margin: 15px 0; font-size: 1.2rem; }
+
+        /* --- PINK ENVELOPE --- */
+        #envelope-overlay { position: fixed; inset: 0; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 5000; cursor: pointer; }
+        .envelope { 
+            width: 140px; height: 90px; background: #ff4d94; 
+            border-radius: 0 0 10px 10px; box-shadow: 0 0 40px var(--reze-pink); 
+            position: relative; display: flex; justify-content: center; align-items: center;
+        }
+        .envelope::before { 
+            content: ""; position: absolute; top: -50px; left: 0; 
+            border-bottom: 50px solid #ff80b3; 
+            border-left: 70px solid transparent; 
+            border-right: 70px solid transparent; 
+        }
+        
+        /* GLOWING X♡ */
+        .glowing-x {
+            font-size: 30px; color: white; font-weight: bold;
+            text-shadow: 0 0 10px #fff, 0 0 20px var(--reze-pink);
+            animation: breathe 1.5s infinite ease-in-out; z-index: 10;
+        }
+        @keyframes breathe {
+            0% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.15); opacity: 1; text-shadow: 0 0 30px var(--reze-pink); }
+            100% { transform: scale(1); opacity: 0.9; }
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="bg-music" playsinline preload="auto"><source src="song.mp3" type="audio/mpeg"></audio>
+
+    <div id="envelope-overlay" onclick="handleUnlock()">
+        <div class="envelope"><div class="glowing-x">X♡</div></div>
+        <p style="color:white; margin-top:50px; font-size:0.75rem; letter-spacing:4px; font-weight:bold;">OPEN LETTER</p>
+        <p id="loading-text" style="display:none; color:var(--indie-blue); margin-top:15px; font-size:0.7rem; letter-spacing:2px;">SYNCING AUDIO...</p>
+    </div>
+
+    <div id="spotify-lyrics">
+        <div id="ly-prev" class="lyric-line"></div>
+        <div id="ly-curr" class="lyric-line active">...</div>
+        <div id="ly-next" class="lyric-line"></div>
+    </div>
+
+    <div class="fixed-bg"></div>
+    <div class="indie-moon"></div>
+
+    <div id="main-container">
+        <div class="section">
+            <div class="glass-card">
+                <h1 class="chapter-title">To My Queen...</h1>
+                <div id="timer">00d : 00h : 00m : 00s</div>
+                <p style="opacity:0.6; font-size:0.8rem; color: var(--indie-blue);">swipe up slowly baby...</p>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="glass-card">
+                <p class="letter-text">
+                    my dearest <span class="highlight-name">Mrs M</span> 🥺❤️💍<br><br>
+                    from the moment I noticed you, I had no idea I was looking at the woman who would change my life forever. what started as simple msgs between two people who had chemistry became the safest place my heart has ever known🥺🫶🏼
+                </p>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="glass-card">
+                <p class="letter-text">
+                    since the day we made it official on <span class="highlight-name">3 November 2024</span>, you have been more than just my girlfriend, you became my peace, my best friend, my home and the love I once prayed for.♡<br><br>
+                    we have crossed distance, faced ups and downs, and created memories that still replay in my mind like my favorite movie.
+                </p>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="glass-card">
+                <p class="letter-text">
+                    every single second with you is a chapter I would relive an <span class="highlight-name">infinity</span> times😭❤️🦋<br><br>
+                    you have seen me at my strongest and at my most vulnerable. your patience, your sacrifices and the way you continue to choose me remind me every day how blessed I am to call you mine🥺❤️😭
+                </p>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="glass-card">
+                <p class="letter-text">
+                    on this Valentine's day I celebrate you. The woman who walked into my life and made it brighter and more meaningful 🌻<br><br>
+                    I promise to keep choosing you, to keep growing with you and to keep building the beautiful story that is only just beginning.
+                </p>
+                <h2 style="font-family:'Pinyon Script'; color:var(--reze-pink); font-size:2.8rem; margin:15px 0;">Happy Valentine's Day!</h2>
+                <p style="opacity:0.6; font-size:0.7rem; letter-spacing:3px; font-weight:bold;">MR & MRS MUHARIWA</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const audio = document.getElementById('bg-music');
+        
+        // --- 🔧 TUNING STATION 🔧 ---
+        // If lyrics are still ahead, INCREASE this number to 5.0 or 6.0
+        const LYRIC_DELAY = 4.5; 
+
+        // Raw timestamps for "Die For You (Remix)"
+        const rawLyrics = [
+            { t: 0.0, text: "🎶 (intro) 🎶" },
+            { t: 9.0, text: "i'm findin' ways to articulate the feeling i'm goin' through" },
+            { t: 14.0, text: "i just can't say i don't love you 'cause i love you, yeah" },
+            { t: 19.0, text: "it's hard for me to communicate the thoughts that i hold" },
+            { t: 24.0, text: "but tonight, i'm gon' let you know" },
+            { t: 28.5, text: "let me tell the truth" },
+            { t: 30.5, text: "baby, let me tell the truth, yeah" },
+            { t: 33.5, text: "you know what i'm thinkin', see it in your eyes" },
+            { t: 38.0, text: "you hate that you want me, hate it when you cry" },
+            { t: 43.0, text: "you're scared to be lonely, 'specially in the night" },
+            { t: 47.5, text: "i'm scared that i'll miss you, happens every time" },
+            { t: 52.0, text: "i don't want this feelin', i can't afford love" },
+            { t: 54.0, text: "i try to find a reason to pull us apart" },
+            { t: 56.5, text: "it ain't workin' 'cause you're perfect" },
+            { t: 59.0, text: "and i know that you're worth it" },
+            { t: 61.0, text: "i can't walk away, oh!" },
+            { t: 63.5, text: "even though we're goin' through it" },
+            { t: 66.0, text: "and it makes you feel alone" },
+            { t: 68.5, text: "just know that i would die for you" },
+            { t: 72.0, text: "baby, i would die for you, yeah" },
+            { t: 74.0, text: "the distance and the time between us" },
+            { t: 76.5, text: "it'll never change my mind 'cause" },
+            { t: 79.0, text: "baby, i would die for you" },
+            { t: 82.5, text: "baby, i would die for you, yeah" },
+            
+            // ARIANA VERSE 
+            { t: 139.0, text: "(ariana) i'm finding ways to stay concentrated" },
+            { t: 144.0, text: "but, baby boy, it's so hard 'round you" },
+            { t: 146.5, text: "and yes, i'm blamin' you" },
+            { t: 149.0, text: "and you know i can't fake it, now or never" },
+            { t: 154.0, text: "better by me and you" },
+            { t: 159.0, text: "you know what i'm thinkin', see it in your eyes" },
+            { t: 164.0, text: "you hate that you want me, hate it when you cry" },
+            { t: 169.0, text: "it ain't workin' 'cause you're perfect" },
+            { t: 171.5, text: "and i know that you're worth it" },
+            { t: 174.0, text: "i can't walk away, oh!" },
+            
+            // FINAL
+            { t: 177.0, text: "even though we're goin' through it" },
+            { t: 182.0, text: "just know that i would die for you" },
+            { t: 190.0, text: "i would die for you..." },
+            { t: 200.0, text: "happy valentine's day ❤️" }
+        ];
+
+        // Apply the delay to every line
+        const lyricsData = rawLyrics.map(line => ({ 
+            t: line.t + LYRIC_DELAY, 
+            text: line.text 
+        }));
+
+        function handleUnlock() {
+            const unlockScreen = document.getElementById('envelope-overlay');
+            const loadingText = document.getElementById('loading-text');
+            
+            loadingText.style.display = 'block';
+            audio.load();
+
+            setTimeout(() => {
+                unlockScreen.style.opacity = '0';
+                setTimeout(() => unlockScreen.style.display = 'none', 500);
+
+                document.getElementById('main-container').style.display = 'block';
+                document.getElementById('spotify-lyrics').style.display = 'block';
+                
+                startTimer();
+                initObserver();
+
+                audio.play()
+                    .then(() => requestAnimationFrame(syncLyrics))
+                    .catch(err => console.log("Auto-play blocked", err));
+            }, 3000); 
+        }
+
+        function syncLyrics() {
+            const time = audio.currentTime; 
+            
+            let index = lyricsData.findIndex((l, i) => {
+                const nextTime = lyricsData[i + 1] ? lyricsData[i + 1].t : Infinity;
+                return time >= l.t && time < nextTime;
+            });
+
+            if (index !== -1) {
+                const prev = document.getElementById('ly-prev');
+                const curr = document.getElementById('ly-curr');
+                const next = document.getElementById('ly-next');
+
+                if (curr.innerText !== lyricsData[index].text) {
+                    prev.innerText = index > 0 ? lyricsData[index-1].text : "";
+                    curr.innerText = lyricsData[index].text;
+                    next.innerText = index < lyricsData.length - 1 ? lyricsData[index+1].text : "";
+                    
+                    curr.classList.remove('active');
+                    void curr.offsetWidth; 
+                    curr.classList.add('active');
+                }
+            }
+            requestAnimationFrame(syncLyrics);
+        }
+
+        function initObserver() {
+            const obs = new IntersectionObserver((es) => {
+                es.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+            }, { threshold: 0.1 });
+            document.querySelectorAll('.section').forEach(s => obs.observe(s));
+        }
+
+        function startTimer() {
+            const start = new Date("November 3, 2024 00:00:00").getTime();
+            setInterval(() => {
+                const diff = new Date().getTime() - start;
+                const d = Math.floor(diff / 86400000);
+                const h = Math.floor((diff % 86400000) / 3600000);
+                const min = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                document.getElementById('timer').innerText = d + "d : " + h + "h : " + min + "m : " + s + "s";
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
